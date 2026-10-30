@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CampusGigs - Student Flexible Staffing PWA</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        campus: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#16a34a',
+                            600: '#15803d',
+                            700: '#166534',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Dynamic Manifest Placeholder -->
+    <link id="manifest-placeholder" rel="manifest">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.4);
+            border-radius: 9999px;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+        .dark .glass {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 h-full flex flex-col transition-colors duration-300 select-none antialiased overflow-hidden">
+
+    <!-- Top Header Navigation -->
+    <header class="glass sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between shadow-sm">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
+                <i data-lucide="zap" class="w-5 h-5 fill-current"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="font-extrabold text-lg leading-tight tracking-tight text-slate-900 dark:text-white">CampusGigs</h1>
+                    <span id="pwa-status-badge" class="text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">PWA Active</span>
+                </div>
+                <p id="online-status" class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5 mt-0.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Online Mode
+                </p>
+            </div>
+        </div>
+
+        <!-- Role Toggle & Actions -->
+        <div class="flex items-center space-x-2">
+            <!-- View Selector (Student vs Client Admin) -->
+            <div class="bg-slate-200/80 dark:bg-slate-800/80 p-1 rounded-xl flex items-center text-xs font-bold">
+                <button id="role-student-btn" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm transition flex items-center gap-1">
+                    <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Student</span>
+                </button>
+                <button id="role-client-btn" class="px-2.5 py-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition flex items-center gap-1">
+                    <i data-lucide="building-2" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Agency/Client</span>
+                </button>
+            </div>
+
+            <!-- Install Button -->
+            <button id="pwa-install-btn" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-xl shadow-md transition flex items-center gap-1.5 animate-bounce">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Install App</span>
+            </button>
+
+            <!-- Theme Toggle -->
+            <button id="theme-toggle" class="p-2.5 rounded-xl hover:bg-slate-200/60 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-300 transition">
+                <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
+                <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- Sidebar Navigation (Desktop) -->
+        <aside class="hidden md:flex flex-col w-64 border-r border-slate-200 dark:border-slate-800 p-4 space-y-6 glass">
+            <!-- Student Menu -->
+            <div id="student-menu" class="space-y-1">
+                <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider px-3 mb-2">Student Portal</p>
+                <button data-tab="find-gigs" class="nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <i data-lucide="briefcase" class="w-4 h-4"></i>
+                    <span>Find Flexible Gigs</span>
+                </button>
+                <button data-tab="my-shifts" class="nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50">
+                    <i data-lucide="calendar-check" class="w-4 h-4"></i>
+                    <span>My Shifts</span>
+                    <span id="student-shifts-badge" class="ml-auto bg-emerald-500 text-white text-[11px] px-2 py-0.5 rounded-full font-bold">0</span>
+                </button>
+                <button data-tab="earnings" class="nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50">
+                    <i data-lucide="wallet" class="w-4 h-4"></i>
+                    <span>Earnings & Pay</span>
+                </button>
+            </div>
+
+            <!-- Client Admin Menu (Hidden by default) -->
+            <div id="client-menu" class="space-y-1 hidden">
+                <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider px-3 mb-2">Agency Admin</p>
+                <button data-tab="post-gig" class="nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>Post Shift Request</span>
+                </button>
+                <button data-tab="manage-gigs" class="nav-tab w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    <span>Manage Shifts & Applicants</span>
+                    <span id="applicants-badge" class="ml-auto bg-amber-500 text-white text-[11px] px-2 py-0.5 rounded-full font-bold">0</span>
+                </button>
+            </div>
+
+            <!-- Profile Widget -->
+            <div class="mt-auto p-4 bg-slate-100 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-full bg-slate-300 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-700 dark:text-slate-200 text-sm">
+                        JD
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate" id="user-display-name">Alex Johnson</p>
+                        <p class="text-[11px] text-slate-500 truncate" id="user-display-subtitle">Computer Science '26</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
+            
+            <!-- SECTION 1: STUDENT - FIND GIGS -->
+            <section id="tab-find-gigs" class="tab-content max-w-5xl mx-auto space-y-6">
+                <!-- Banner -->
+                <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden">
+                    <div class="relative z-10 space-y-2">
+                        <span class="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Timetable Smart Match</span>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Flexible Part-Time Gigs Near Campus</h2>
+                        <p class="text-slate-300 text-xs sm:text-sm max-w-xl leading-relaxed">Book shifts that fit directly around your lecture hours. Fast payments guaranteed upon shift completion.</p>
+                    </div>
+                    <i data-lucide="clock" class="absolute -right-4 -bottom-4 w-40 h-40 text-emerald-500/10 pointer-events-none"></i>
+                </div>
+
+                <!-- Filters & Search -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                    <div class="relative flex-1">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-slate-400"></i>
+                        <input type="text" id="gig-search" placeholder="Search by role, company, or skills..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                        <button data-cat="all" class="cat-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow-sm">All Gigs</button>
+                        <button data-cat="Hospitality" class="cat-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700">Hospitality</button>
+                        <button data-cat="Events" class="cat-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700">Events</button>
+                        <button data-cat="Logistics" class="cat-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700">Logistics</button>
+                        <button data-cat="Tutoring" class="cat-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700">Tutoring</button>
+                    </div>
+                </div>
+
+                <!-- Shift Cards Feed -->
+                <div id="gigs-feed" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Rendered Dynamically -->
+                </div>
+            </section>
+
+            <!-- SECTION 2: STUDENT - MY SHIFTS -->
+            <section id="tab-my-shifts" class="tab-content hidden max-w-5xl mx-auto space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-extrabold tracking-tight">My Booked Shifts</h2>
+                        <p class="text-xs sm:text-sm text-slate-500">Track upcoming bookings and completed shifts.</p>
+                    </div>
+                </div>
+
+                <!-- Sub-tabs -->
+                <div class="flex space-x-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+                    <button id="shift-subtab-upcoming" class="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">Upcoming Shifts</button>
+                    <button id="shift-subtab-completed" class="px-4 py-2 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">Completed & Paid</button>
+                </div>
+
+                <div id="my-shifts-container" class="space-y-3">
+                    <!-- Dynamic rendering -->
+                </div>
+            </section>
+
+            <!-- SECTION 3: STUDENT - EARNINGS -->
+            <section id="tab-earnings" class="tab-content hidden max-w-4xl mx-auto space-y-6">
+                <div>
+                    <h2 class="text-2xl font-extrabold tracking-tight">Student Earnings Summary</h2>
+                    <p class="text-xs sm:text-sm text-slate-500">Track payouts generated through agency gigs.</p>
+                </div>
+
+                <!-- Stats Overview -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
+                        <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Earned</span>
+                        <p class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400" id="stat-total-earned">$0.00</p>
+                    </div>
+                    <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
+                        <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Hours Worked</span>
+                        <p class="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400" id="stat-hours-worked">0.0 hrs</p>
+                    </div>
+                    <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
+                        <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Shifts Finished</span>
+                        <p class="text-3xl font-extrabold text-amber-500" id="stat-shifts-count">0</p>
+                    </div>
+                </div>
+
+                <!-- Payout History -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-4">
+                    <h3 class="font-bold text-sm tracking-tight">Recent Payout Activity</h3>
+                    <div id="earnings-history" class="space-y-3 text-xs">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 4: CLIENT - POST GIG -->
+            <section id="tab-post-gig" class="tab-content hidden max-w-2xl mx-auto space-y-6">
+                <div>
+                    <h2 class="text-2xl font-extrabold tracking-tight">Post Urgent Shift Request</h2>
+                    <p class="text-xs sm:text-sm text-slate-500">Dispatch shift openings to vetted student talent near your venue.</p>
+                </div>
+
+                <form id="post-gig-form" class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Shift / Role Title</label>
+                        <input type="text" id="post-title" required placeholder="e.g. Catering Assistant / Event Setup" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Category</label>
+                            <select id="post-category" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                <option value="Hospitality">Hospitality</option>
+                                <option value="Events">Events</option>
+                                <option value="Logistics">Logistics</option>
+                                <option value="Tutoring">Tutoring</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Client Business Name</label>
+                            <input type="text" id="post-client" required placeholder="e.g. Grand Plaza Hotel" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Hourly Pay ($)</label>
+                            <input type="number" step="0.50" id="post-pay" required placeholder="18.50" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Shift Duration (hrs)</label>
+                            <input type="number" id="post-hours" required placeholder="4" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Date & Time</label>
+                            <input type="text" id="post-time" required placeholder="Tomorrow, 5 PM - 9 PM" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Location / Venue</label>
+                        <input type="text" id="post-location" required placeholder="e.g. University Student Union, Room 204" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Shift Description & Requirements</label>
+                        <textarea id="post-desc" rows="3" required placeholder="Describe task specifics, dress code, etc." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                        <i data-lucide="send" class="w-4 h-4"></i> Dispatch Shift Opening
+                    </button>
+                </form>
+            </section>
+
+            <!-- SECTION 5: CLIENT - MANAGE SHIFTS -->
+            <section id="tab-manage-gigs" class="tab-content hidden max-w-5xl mx-auto space-y-6">
+                <div>
+                    <h2 class="text-2xl font-extrabold tracking-tight">Active Shift Dispatches</h2>
+                    <p class="text-xs sm:text-sm text-slate-500">Review student applicants and confirm shift rosters.</p>
+                </div>
+
+                <div id="manage-gigs-container" class="space-y-4">
+                    <!-- Dynamic rendering -->
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Mobile Navigation Bar -->
+    <nav class="md:hidden glass fixed bottom-0 left-0 right-0 z-30 border-t border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-around">
+        <!-- Student Mobile Tabs -->
+        <div id="mobile-student-tabs" class="flex items-center justify-around w-full">
+            <button data-tab="find-gigs" class="nav-tab flex flex-col items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                <i data-lucide="briefcase" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">Gigs</span>
+            </button>
+            <button data-tab="my-shifts" class="nav-tab flex flex-col items-center gap-1 text-slate-400">
+                <i data-lucide="calendar-check" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">My Shifts</span>
+            </button>
+            <button data-tab="earnings" class="nav-tab flex flex-col items-center gap-1 text-slate-400">
+                <i data-lucide="wallet" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">Earnings</span>
+            </button>
+        </div>
+
+        <!-- Client Mobile Tabs (Hidden) -->
+        <div id="mobile-client-tabs" class="flex items-center justify-around w-full hidden">
+            <button data-tab="manage-gigs" class="nav-tab flex flex-col items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                <i data-lucide="users" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">Applicants</span>
+            </button>
+            <button data-tab="post-gig" class="nav-tab flex flex-col items-center gap-1 text-slate-400">
+                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">Post Shift</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Toast Notification Widget -->
+    <div id="toast" class="fixed bottom-20 md:bottom-6 right-6 z-50 bg-slate-900 text-white text-xs px-4 py-3 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-2 translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <i data-lucide="info" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toast-message">Notification message</span>
+    </div>
+
+    <!-- MAIN PWA SCRIPT -->
+    <script>
+        lucide.createIcons();
+
+        /* ==========================================
+           1. PWA MANIFEST & SERVICE WORKER CREATION
+           ========================================== */
+
+        // Dynamic Manifest Generation
+        const manifestData = {
+            name: "CampusGigs Flexible Recruitment",
+            short_name: "CampusGigs",
+            description: "Link university students with flexible local part-time shifts and gigs.",
+            start_url: "./",
+            display: "standalone",
+            background_color: "#0f172a",
+            theme_color: "#0f172a",
+            icons: [
+                {
+                    src: "https://placehold.co/192x192/16a34a/ffffff?text=CG",
+                    sizes: "192x192",
+                    type: "image/png"
+                },
+                {
+                    src: "https://placehold.co/512x512/16a34a/ffffff?text=CampusGigs",
+                    sizes: "512x512",
+                    type: "image/png"
+                }
+            ]
+        };
+
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+        document.getElementById('manifest-placeholder').setAttribute('href', URL.createObjectURL(manifestBlob));
+
+        // Dynamic Service Worker Script Injection
+        const swCode = `
+            const CACHE_NAME = 'campusgigs-pwa-v1';
+            const ASSETS = [
+                './',
+                'https://cdn.tailwindcss.com',
+                'https://unpkg.com/lucide@latest'
+            ];
+
+            self.addEventListener('install', (e) => {
+                e.waitUntil(
+                    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+                        .then(() => self.skipWaiting())
+                );
+            });
+
+            self.addEventListener('activate', (e) => {
+                e.waitUntil(
+                    caches.keys().then((keys) => {
+                        return Promise.all(
+                            keys.map((k) => k !== CACHE_NAME ? caches.delete(k) : null)
+                        );
+                    }).then(() => self.clients.claim())
+                );
+            });
+
+            self.addEventListener('fetch', (e) => {
+                e.respondWith(
+                    caches.match(e.request).then((res) => {
+                        return res || fetch(e.request).then((fetchRes) => {
+                            if (fetchRes.status === 200 && e.request.method === 'GET') {
+                                const clone = fetchRes.clone();
+                                caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+                            }
+                            return fetchRes;
+                        }).catch(() => new Response('Offline Content Available'));
+                    })
+                );
+            });
+        `;
+
+        if ('serviceWorker' in navigator) {
+            const swBlob = new Blob([swCode], { type: 'application/javascript' });
+            navigator.serviceWorker.register(URL.createObjectURL(swBlob))
+                .then(() => console.log('PWA SW Registered'))
+                .catch(err => console.warn('SW Fail:', err));
+        }
+
+        /* ==========================================
+           2. PWA INSTALL & ONLINE STATUS
+           ========================================== */
+        let deferredPrompt;
+        const pwaInstallBtn = document.getElementById('pwa-install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            pwaInstallBtn.classList.remove('hidden');
+        });
+
+        pwaInstallBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') showToast('CampusGigs PWA Installed!');
+            deferredPrompt = null;
+            pwaInstallBtn.classList.add('hidden');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            pwaInstallBtn.classList.add('hidden');
+            document.getElementById('pwa-status-badge').textContent = 'Native App';
+        });
+
+        function updateOnlineStatus() {
+            const statusEl = document.getElementById('online-status');
+            if (navigator.onLine) {
+                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Online Mode`;
+                statusEl.className = "text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5";
+            } else {
+                statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Offline Mode (Cached Data)`;
+                statusEl.className = "text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1.5";
+                showToast('Working Offline via Service Worker');
+            }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus();
+
+        /* ==========================================
+           3. APPLICATION DATA STORE
+           ========================================== */
+        let gigs = JSON.parse(localStorage.getItem('cg_gigs') || 'null');
+        let currentRole = 'student'; // 'student' or 'client'
+        let activeCategory = 'all';
+
+        // Default initial seed gigs
+        if (!gigs) {
+            gigs = [
+                {
+                    id: 'gig-1',
+                    title: 'Banquet & Catering Server',
+                    client: 'Grand Palace Hotel',
+                    category: 'Hospitality',
+                    pay: 22.00,
+                    hours: 5,
+                    time: 'Friday, 6:00 PM - 11:00 PM',
+                    location: 'Grand Ballroom, Downtown',
+                    desc: 'Assist with plate service and table setup for evening university gala.',
+                    applicants: [
+                        { name: 'Alex Johnson', major: 'CS \'26', status: 'pending' }
+                    ]
+                },
+                {
+                    id: 'gig-2',
+                    title: 'Campus Brand Ambassador',
+                    client: 'Red Bull Marketing',
+                    category: 'Events',
+                    pay: 20.00,
+                    hours: 3,
+                    time: 'Thursday, 12:00 PM - 3:00 PM',
+                    location: 'Student Union Quad',
+                    desc: 'Hand out promotional merchandise and engage with students during campus fair.',
+                    applicants: []
+                },
+                {
+                    id: 'gig-3',
+                    title: 'E-commerce Warehouse Packer',
+                    client: 'SwiftLogistics Co.',
+                    category: 'Logistics',
+                    pay: 19.50,
+                    hours: 4,
+                    time: 'Saturday, 8:00 AM - 12:00 PM',
+                    location: 'Northside Hub (Direct Bus Access)',
+                    desc: 'Pick and pack fast-turnaround parcel orders during weekend flash sales.',
+                    applicants: []
+                }
+            ];
+            saveGigs();
+        }
+
+        function saveGigs() {
+            localStorage.setItem('cg_gigs', JSON.stringify(gigs));
+            renderGigs();
+            renderMyShifts();
+            renderManageGigs();
+            renderEarnings();
+            updateBadges();
+        }
+
+        /* ==========================================
+           4. RENDERING FUNCTIONS
+           ========================================== */
+
+        // Render Open Gigs for Students
+        function renderGigs() {
+            const feed = document.getElementById('gigs-feed');
+            const searchVal = document.getElementById('gig-search').value.toLowerCase();
+
+            const filtered = gigs.filter(g => {
+                const matchCat = activeCategory === 'all' || g.category === activeCategory;
+                const matchSearch = g.title.toLowerCase().includes(searchVal) || 
+                                    g.client.toLowerCase().includes(searchVal) ||
+                                    g.location.toLowerCase().includes(searchVal);
+                return matchCat && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                feed.innerHTML = `
+                    <div class="col-span-full p-8 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                        <i data-lucide="briefcase" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
+                        <p class="text-sm font-semibold text-slate-500">No matching shifts available</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            feed.innerHTML = filtered.map(gig => {
+                const totalPay = (gig.pay * gig.hours).toFixed(2);
+                const hasApplied = gig.applicants.some(a => a.name === 'Alex Johnson');
+                const isApproved = gig.applicants.some(a => a.name === 'Alex Johnson' && a.status === 'approved');
+
+                let actionBtn = `
+                    <button onclick="applyForGig('${gig.id}')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow">
+                        1-Click Apply
+                    </button>`;
+
+                if (isApproved) {
+                    actionBtn = `<span class="text-xs font-bold px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Shift Booked!</span>`;
+                } else if (hasApplied) {
+                    actionBtn = `<span class="text-xs font-bold px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">Application Pending</span>`;
+                }
+
+                return `
+                    <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-4 hover:border-emerald-500/50 transition">
+                        <div class="space-y-2">
+                            <div class="flex items-start justify-between gap-2">
+                                <div>
+                                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">${gig.category}</span>
+                                    <h3 class="font-extrabold text-slate-900 dark:text-white text-base">${escapeHtml(gig.title)}</h3>
+                                    <p class="text-xs text-slate-500 font-semibold">${escapeHtml(gig.client)}</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-lg font-black text-emerald-600 dark:text-emerald-400">$${gig.pay.toFixed(2)}</span>
+                                    <span class="text-[10px] text-slate-400 font-semibold block">/ hr</span>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">${escapeHtml(gig.desc)}</p>
+
+                            <div class="pt-2 space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i>
+                                    <span>${escapeHtml(gig.time)} (${gig.hours} hrs)</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-400"></i>
+                                    <span>${escapeHtml(gig.location)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Est. Earnings: <span class="text-emerald-600 dark:text-emerald-400">$${totalPay}</span></span>
+                            ${actionBtn}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        // Render My Shifts for Student
+        function renderMyShifts() {
+            const container = document.getElementById('my-shifts-container');
+            const myShifts = gigs.filter(g => g.applicants.some(a => a.name === 'Alex Johnson'));
+
+            if (myShifts.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                        <i data-lucide="calendar" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
+                        <p class="text-sm font-semibold text-slate-500">No shift bookings yet</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = myShifts.map(gig => {
+                const app = gig.applicants.find(a => a.name === 'Alex Johnson');
+                const isApproved = app.status === 'approved';
+
+                return `
+                    <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <h4 class="font-bold text-sm text-slate-900 dark:text-white">${escapeHtml(gig.title)}</h4>
+                                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${isApproved ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}">
+                                    ${app.status}
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500 font-medium">${escapeHtml(gig.client)} • ${escapeHtml(gig.time)}</p>
+                        </div>
+                        <div class="flex items-center justify-between sm:justify-end gap-4">
+                            <div class="text-left sm:text-right">
+                                <span class="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">$${(gig.pay * gig.hours).toFixed(2)}</span>
+                                <span class="text-[10px] text-slate-400 block">${gig.hours} hrs @ $${gig.pay}/hr</span>
+                            </div>
+                            ${isApproved ? `
+                                <button onclick="markShiftComplete('${gig.id}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow">
+                                    Clock Out & Complete
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        // Render Client/Admin Manage View
+        function renderManageGigs() {
+            const container = document.getElementById('manage-gigs-container');
+
+            if (gigs.length === 0) {
+                container.innerHTML = `<p class="text-sm text-slate-500">No shift dispatches posted.</p>`;
+                return;
+            }
+
+            container.innerHTML = gigs.map(gig => `
+                <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <div>
+                            <span class="text-[10px] font-extrabold uppercase text-emerald-600">${gig.category}</span>
+                            <h3 class="font-bold text-base text-slate-900 dark:text-white">${escapeHtml(gig.title)}</h3>
+                            <p class="text-xs text-slate-500">${escapeHtml(gig.client)} • ${gig.time}</p>
+                        </div>
+                        <span class="text-xs font-bold px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
+                            ${gig.applicants.length} Student Applicants
+                        </span>
+                    </div>
+
+                    <!-- Applicants List -->
+                    <div class="space-y-2">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Applicant Queue</p>
+                        ${gig.applicants.length === 0 ? '<p class="text-xs text-slate-400">Waiting for student applications...</p>' : ''}
+                        ${gig.applicants.map(applicant => `
+                            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold">
+                                        ${applicant.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-bold text-slate-800 dark:text-slate-200">${escapeHtml(applicant.name)}</p>
+                                        <p class="text-[10px] text-slate-500">${applicant.major}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    ${applicant.status === 'pending' ? `
+                                        <button onclick="updateAppStatus('${gig.id}', '${applicant.name}', 'approved')" class="px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700">Approve</button>
+                                        <button onclick="updateAppStatus('${gig.id}', '${applicant.name}', 'rejected')" class="px-2 py-1 text-slate-400 hover:text-rose-500 text-xs font-bold">Reject</button>
+                                    ` : `
+                                        <span class="text-xs font-bold text-emerald-600 uppercase">${applicant.status}</span>
+                                    `}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // Render Earnings Tab
+        function renderEarnings() {
+            const completedShifts = gigs.filter(g => 
+                g.applicants.some(a => a.name === 'Alex Johnson' && a.status === 'completed')
+            );
+
+            let totalEarned = 0;
+            let totalHours = 0;
+
+            completedShifts.forEach(g => {
+                totalEarned += (g.pay * g.hours);
+                totalHours += g.hours;
+            });
+
+            document.getElementById('stat-total-earned').textContent = `$${totalEarned.toFixed(2)}`;
+            document.getElementById('stat-hours-worked').textContent = `${totalHours.toFixed(1)} hrs`;
+            document.getElementById('stat-shifts-count').textContent = completedShifts.length;
+
+            const historyEl = document.getElementById('earnings-history');
+            if (completedShifts.length === 0) {
+                historyEl.innerHTML = `<p class="text-slate-400">No completed shift payouts yet.</p>`;
+                return;
+            }
+
+            historyEl.innerHTML = completedShifts.map(g => `
+                <div class="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800">
+                    <div>
+                        <p class="font-bold text-slate-800 dark:text-slate-200">${escapeHtml(g.title)}</p>
+                        <p class="text-[10px] text-slate-400">${escapeHtml(g.client)} • ${g.hours} hrs</p>
+                    </div>
+                    <span class="font-extrabold text-emerald-600 dark:text-emerald-400">+$${(g.pay * g.hours).toFixed(2)}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateBadges() {
+            const studentShiftsCount = gigs.filter(g => g.applicants.some(a => a.name === 'Alex Johnson')).length;
+            document.getElementById('student-shifts-badge').textContent = studentShiftsCount;
+
+            let totalApplicants = 0;
+            gigs.forEach(g => totalApplicants += g.applicants.filter(a => a.status === 'pending').length);
+            document.getElementById('applicants-badge').textContent = totalApplicants;
+        }
+
+        /* ==========================================
+           5. ACTIONS & DISPATCHERS
+           ========================================== */
+
+        window.applyForGig = function(gigId) {
+            gigs = gigs.map(g => {
+                if (g.id === gigId) {
+                    if (!g.applicants.some(a => a.name === 'Alex Johnson')) {
+                        g.applicants.push({ name: 'Alex Johnson', major: 'CS \'26', status: 'pending' });
+                    }
+                }
+                return g;
+            });
+            saveGigs();
+            showToast('Applied! Awaiting client confirmation.');
+        };
+
+        window.updateAppStatus = function(gigId, studentName, newStatus) {
+            gigs = gigs.map(g => {
+                if (g.id === gigId) {
+                    g.applicants = g.applicants.map(a => a.name === studentName ? { ...a, status: newStatus } : a);
+                }
+                return g;
+            });
+            saveGigs();
+            showToast(`Student status updated to ${newStatus}`);
+        };
+
+        window.markShiftComplete = function(gigId) {
+            gigs = gigs.map(g => {
+                if (g.id === gigId) {
+                    g.applicants = g.applicants.map(a => a.name === 'Alex Johnson' ? { ...a, status: 'completed' } : a);
+                }
+                return g;
+            });
+            saveGigs();
+            showToast('Shift marked completed! Earnings logged.');
+        };
+
+        /* ==========================================
+           6. EVENT LISTENERS & UI NAVIGATION
+           ========================================== */
+
+        // Role Switcher (Student vs Client Admin)
+        const roleStudentBtn = document.getElementById('role-student-btn');
+        const roleClientBtn = document.getElementById('role-client-btn');
+        const studentMenu = document.getElementById('student-menu');
+        const clientMenu = document.getElementById('client-menu');
+        const mobileStudentTabs = document.getElementById('mobile-student-tabs');
+        const mobileClientTabs = document.getElementById('mobile-client-tabs');
+
+        roleStudentBtn.addEventListener('click', () => setRole('student'));
+        roleClientBtn.addEventListener('click', () => setRole('client'));
+
+        function setRole(role) {
+            currentRole = role;
+            if (role === 'student') {
+                roleStudentBtn.className = "px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm transition flex items-center gap-1";
+                roleClientBtn.className = "px-2.5 py-1.5 rounded-lg text-slate-500 dark:text-slate-400 transition flex items-center gap-1";
+                studentMenu.classList.remove('hidden');
+                clientMenu.classList.add('hidden');
+                mobileStudentTabs.classList.remove('hidden');
+                mobileClientTabs.classList.add('hidden');
+                document.getElementById('user-display-name').textContent = "Alex Johnson";
+                document.getElementById('user-display-subtitle').textContent = "Computer Science '26";
+                switchTab('find-gigs');
+            } else {
+                roleClientBtn.className = "px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm transition flex items-center gap-1";
+                roleStudentBtn.className = "px-2.5 py-1.5 rounded-lg text-slate-500 dark:text-slate-400 transition flex items-center gap-1";
+                clientMenu.classList.remove('hidden');
+                studentMenu.classList.add('hidden');
+                mobileClientTabs.classList.remove('hidden');
+                mobileStudentTabs.classList.add('hidden');
+                document.getElementById('user-display-name').textContent = "Campus Event Group";
+                document.getElementById('user-display-subtitle').textContent = "Verified Hiring Partner";
+                switchTab('manage-gigs');
+            }
+        }
+
+        // Tab Switcher
+        function switchTab(targetTab) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            const activeTabEl = document.getElementById(`tab-${targetTab}`);
+            if (activeTabEl) activeTabEl.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-tab').forEach(btn => {
+                const tabAttr = btn.getAttribute('data-tab');
+                if (tabAttr === targetTab) {
+                    btn.classList.add('bg-emerald-500/10', 'text-emerald-600', 'dark:text-emerald-400');
+                    btn.classList.remove('text-slate-600', 'text-slate-400');
+                } else {
+                    btn.classList.remove('bg-emerald-500/10', 'text-emerald-600', 'dark:text-emerald-400');
+                    btn.classList.add('text-slate-600', 'dark:text-slate-400');
+                }
+            });
+        }
+
+        document.querySelectorAll('.nav-tab').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
+        });
+
+        // Category Filter
+        document.querySelectorAll('.cat-filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.cat-filter-btn').forEach(b => {
+                    b.className = 'cat-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-700';
+                });
+                e.target.className = 'cat-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow-sm';
+                activeCategory = e.target.getAttribute('data-cat');
+                renderGigs();
+            });
+        });
+
+        document.getElementById('gig-search').addEventListener('input', renderGigs);
+
+        // Client Form Submission
+        document.getElementById('post-gig-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newGig = {
+                id: 'gig-' + Date.now(),
+                title: document.getElementById('post-title').value.trim(),
+                category: document.getElementById('post-category').value,
+                client: document.getElementById('post-client').value.trim(),
+                pay: parseFloat(document.getElementById('post-pay').value),
+                hours: parseFloat(document.getElementById('post-hours').value),
+                time: document.getElementById('post-time').value.trim(),
+                location: document.getElementById('post-location').value.trim(),
+                desc: document.getElementById('post-desc').value.trim(),
+                applicants: []
+            };
+
+            gigs.unshift(newGig);
+            saveGigs();
+            document.getElementById('post-gig-form').reset();
+            showToast('Shift dispatched to student network!');
+            switchTab('manage-gigs');
+        });
+
+        // Theme Toggle
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+        });
+
+        // Helper Toast
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, match => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[match]));
+        }
+
+        // Initialize App
+        saveGigs();
+    </script>
+</body>
+</html>
